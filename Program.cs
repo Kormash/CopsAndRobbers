@@ -34,6 +34,7 @@ namespace CopsAndRobbers
 
             List<Person> citizens = new List<Person>();
 
+            //Populate the City.
             for (int i = 0; i < numCops; i++)
             {
                 Cop cop = new Cop(rnd.Next(mapSizeX), rnd.Next(mapSizeY));
