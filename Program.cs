@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Linq;
 using System.Text;
@@ -33,6 +34,7 @@ namespace CopsAndRobbers
             Random rnd = new Random();
 
             List<Person> citizens = new List<Person>();
+            List<Robber> prison = new List<Robber>();
 
             //Populate the City.
             for (int i = 0; i < numCops; i++)
@@ -51,11 +53,11 @@ namespace CopsAndRobbers
                 citizens.Add(civilian);
             }
 
-            Simulate(citizens);
+            Simulate(citizens, prison);
 
         }
 
-        void Simulate(List<Person> citizens)
+        void Simulate(List<Person> citizens, List<Robber> prison)
         {
             Random rnd = new Random();
             while (true)
@@ -93,6 +95,7 @@ namespace CopsAndRobbers
                     for (int x = 0; x < mapSizeX; x++)
                     {
                         int check = CheckSquare(x, y, citizens);
+                        Robber robber;
                         switch (check)
                         {
                             case 0:
@@ -114,7 +117,9 @@ namespace CopsAndRobbers
                             case 4:
                                 //Cop and Robber
                                 row += "X";
-                                Arrest(x, y, citizens);
+                                robber = Arrest(x, y, citizens);
+                                prison.Add(robber);
+                                citizens.Remove(robber);
                                 arrests++;
                                 break;
                             case 5:
@@ -126,7 +131,9 @@ namespace CopsAndRobbers
                             case 6:
                                 //Cop, Robber and Civilian
                                 row += "X";
-                                Arrest(x, y, citizens);
+                                robber = Arrest(x, y, citizens);
+                                prison.Add(robber);
+                                citizens.Remove(robber);
                                 arrests++;
                                 break;
                         }
@@ -156,6 +163,42 @@ namespace CopsAndRobbers
                 {
                     Console.WriteLine("Robber stole from a Civilian!");
                     robberies--;
+                }
+
+                //Update Prison
+                List<Robber> toRelease = new List<Robber>();
+                
+                foreach (Robber robber in prison)
+                {
+                    if (robber.prisonTime >= 30)
+                    {
+                        robber.prisonTime = 0;
+                        toRelease.Add(robber);
+                    }
+                    else
+                    {
+                        robber.prisonTime++;
+                    }
+                }
+
+                //Release all Prisoners who served their time
+                foreach(Robber robber in toRelease)
+                {
+                    citizens.Add(robber);
+                    prison.Remove(robber);
+                    Console.WriteLine("A Robber was Released!");
+                    wait = true;
+                }
+
+                if(prison.Count > 0)
+                {
+                    Console.WriteLine("There are currently " + prison.Count + " Prisoners in jail.");
+                    int i = 0;
+                    foreach(Robber robber in prison)
+                    {
+                        i++;
+                        Console.WriteLine("Intmate " + i + " has served " + robber.prisonTime + " days of his sentence.");
+                    }
                 }
 
                 if (wait)
@@ -226,9 +269,10 @@ namespace CopsAndRobbers
             return result;
         }
 
-        void Arrest(int x, int y, List<Person> citizens)
+        Robber Arrest(int x, int y, List<Person> citizens)
         {
-            Person robber = new Person();
+            //Returns the arrested Robber.
+            Robber robber = new Robber(0,0);
             Person cop = new Person();
 
             bool robberFound = false;
@@ -245,7 +289,7 @@ namespace CopsAndRobbers
                         case "Robber":
                             if (!robberFound)
                             {
-                                robber = person;
+                                robber = (Robber) person;
                                 robberFound = true;
                             }
                             break;
@@ -273,6 +317,8 @@ namespace CopsAndRobbers
                     }
                 }
             }
+            //Return the arrested Robber.
+            return robber;
         }
 
         void Robb(int x, int y, List<Person> citizens)
@@ -348,10 +394,13 @@ namespace CopsAndRobbers
 
         class Robber : Person
         {
+            public int prisonTime;
+
             public Robber(int x, int y)
             {
                 xPos = x;
                 yPos = y;
+                prisonTime = 0;
             }
         }
 
